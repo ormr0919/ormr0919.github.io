@@ -1,0 +1,11 @@
+# Material de trabajo local: no se publica
+Bases oficiales/
+datos/
+
+# Configuración local de herramientas
+.claude/
+
+# Archivos del sistema
+desktop.ini
+Thumbs.db
+.DS_Store
