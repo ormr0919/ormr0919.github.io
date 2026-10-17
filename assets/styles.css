@@ -103,8 +103,10 @@ header.top { display: grid; gap: 14px; padding-bottom: 22px; border-bottom: 3px 
 .timeline li.now::before { border-color: var(--cable); }
 .timeline .when { font-family: var(--f-mono); font-size: 0.85rem; color: var(--muted); }
 .timeline .what { font-weight: 600; }
-.countdown { display: inline-block; font-family: var(--f-mono); font-size: 0.78rem; padding: 1px 8px; border-radius: 3px; background: var(--accent-soft); color: var(--warn); margin-left: 6px; font-weight: 500; }
-.countdown:empty { display: none; }
+.estado { display: inline-block; font-family: var(--f-mono); font-size: 0.78rem; padding: 1px 8px; border-radius: 3px; margin-left: 6px; font-weight: 500; background: var(--accent-soft); color: var(--warn); }
+.estado:empty { display: none; }
+.estado.abierta { background: var(--ok-soft); color: var(--ok); }
+.estado.pasada { background: var(--chip); color: var(--muted); }
 
 /* Chips */
 .chip { display: inline-block; font-size: 0.78rem; font-weight: 600; padding: 2px 8px; border-radius: 3px; background: var(--chip); color: var(--ink); white-space: nowrap; }

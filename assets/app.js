@@ -83,18 +83,47 @@
     if ($('st-total')) { $('st-total').textContent = DATA.length; }
   })();
 
-  /* ---------- Cuenta regresiva ---------- */
-  (function () {
-    var els = document.querySelectorAll('.countdown[data-deadline]');
-    for (var i = 0; i < els.length; i++) {
-      var ms = new Date(els[i].getAttribute('data-deadline')).getTime() - Date.now();
-      if (isNaN(ms)) { continue; }
-      if (ms <= 0) { els[i].textContent = 'cerrado'; continue; }
-      var d = Math.floor(ms / 86400000);
-      var h = Math.floor((ms % 86400000) / 3600000);
-      els[i].textContent = d > 0 ? 'faltan ' + d + ' d ' + h + ' h' : 'faltan ' + h + ' h';
+  /* ---------- Estado de cada fecha del calendario ----------
+     "evento": reunión informativa (antes / en curso / ya pasó).
+     "plazo": período de postulación (abre en… / abierta y cierra en… / cerrada).
+     La recepción es de lunes a viernes de 08:00 a 15:00, hora de Paraguay (UTC-3). */
+  function duracion(ms) {
+    var min = Math.floor(ms / 60000);
+    var d = Math.floor(min / 1440), h = Math.floor((min % 1440) / 60), m = min % 60;
+    if (d > 0) { return plural(d, 'día', 'días') + (h ? ' y ' + plural(h, 'hora', 'horas') : ''); }
+    if (h > 0) { return plural(h, 'hora', 'horas') + (m ? ' y ' + m + ' min' : ''); }
+    return Math.max(m, 1) + ' min';
+  }
+  function estadoFecha(tipo, inicio, fin, ahora) {
+    if (tipo === 'evento') {
+      if (ahora < inicio) { return { texto: 'en ' + duracion(inicio - ahora), clase: '' }; }
+      if (ahora < fin) { return { texto: 'en curso', clase: 'abierta' }; }
+      return { texto: 'ya pasó', clase: 'pasada' };
     }
-  })();
+    if (ahora < inicio) { return { texto: 'abre en ' + duracion(inicio - ahora), clase: '' }; }
+    if (ahora >= fin) { return { texto: 'cerrada', clase: 'pasada' }; }
+    var py = new Date(ahora - 3 * 3600000); // hora de Paraguay
+    var dia = py.getUTCDay(), hm = py.getUTCHours() * 60 + py.getUTCMinutes();
+    var cierra = 'cierra en ' + duracion(fin - ahora);
+    if (dia === 0 || dia === 6) { return { texto: 'fin de semana, sin recepción · ' + cierra, clase: '' }; }
+    if (hm < 480 || hm >= 900) { return { texto: 'fuera de horario · ' + cierra, clase: '' }; }
+    return { texto: 'abierta ahora · ' + cierra, clase: 'abierta' };
+  }
+  function actualizarFechas(ahora) {
+    var items = document.querySelectorAll('.timeline li[data-tipo]');
+    for (var i = 0; i < items.length; i++) {
+      var li = items[i];
+      var ini = new Date(li.getAttribute('data-inicio')).getTime();
+      var fin = new Date(li.getAttribute('data-fin')).getTime();
+      var el = li.querySelector('.estado');
+      if (!el || isNaN(ini) || isNaN(fin)) { continue; }
+      var e = estadoFecha(li.getAttribute('data-tipo'), ini, fin, ahora);
+      el.textContent = e.texto;
+      el.className = 'estado' + (e.clase ? ' ' + e.clase : '');
+    }
+  }
+  actualizarFechas(Date.now());
+  setInterval(function () { actualizarFechas(Date.now()); }, 60000);
 
   /* ---------- Vacancias por departamento ---------- */
   var PRINCIPALES = ['Operador de Estaciones y Subestaciones IV', 'Electromecánico IV', 'Despachante de Carga Junior', 'Técnico Junior',
@@ -465,7 +494,7 @@
       ['Vinculación', m.p.tipo === 'CPI' ? 'Permanente' : 'Contrato'],
       ['Salario mensual', gs(s.sal)],
       ['Vacancias en la sede', String(s.vac)],
-      ['Postulación', diaMes(s.ini) + ' al ' + diaMes(s.fin) + ', 15:00']
+      ['Postulación', diaMes(s.ini) + ' al ' + diaMes(s.fin) + ', hasta las 15:00']
     ];
     var content = [
       { text: 'GUÍA DE ESTUDIO · CONCURSO EXTERNO ANDE 2026', style: 'eyebrow' },
@@ -733,5 +762,5 @@
   })();
 
   /* Expuesto solo para pruebas automáticas */
-  window.__APP_TEST__ = { modeloGuia: modeloGuia, pdfDoc: pdfDoc, cargarPdfMake: cargarPdfMake, nombreArchivo: nombreArchivo, EXTERNOS: EXTERNOS };
+  window.__APP_TEST__ = { modeloGuia: modeloGuia, pdfDoc: pdfDoc, cargarPdfMake: cargarPdfMake, nombreArchivo: nombreArchivo, EXTERNOS: EXTERNOS, estadoFecha: estadoFecha, actualizarFechas: actualizarFechas };
 })();
